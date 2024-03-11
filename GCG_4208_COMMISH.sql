@@ -1,0 +1,17 @@
+/* ==========================================
+ * TABLE: GCG_4208_COMMISH
+ * ========================================== */
+CREATE TABLE "GCG_4208_COMMISH"(
+ "SALESPERSON" CHAR(3),
+ "CUSTOMER" CHAR(30),
+ "CUSTPART" CHAR(20),
+ "GSSPART" CHAR(20),
+ "QTY_SHIP" NUMERIC(8,2),
+ "SALES" NUMERIC(8,2),
+ "COMMISSION_PERC" NUMERIC(8,2),
+ "COMMISSION_TOTAL" NUMERIC(8,2),
+ "BIRUNID" BIGINT,
+ "SALES_NAME" CHAR(50),
+ "CUSTOMER_NAME" CHAR(30));
+
+
