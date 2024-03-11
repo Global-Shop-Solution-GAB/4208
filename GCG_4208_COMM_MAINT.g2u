@@ -1,0 +1,357 @@
+Program.Sub.ScreenSU.Start
+Gui.Form..Create
+Gui.Form..Size(7800,7350)
+Gui.Form..MinX(0)
+Gui.Form..MinY(0)
+Gui.Form..Position(0,0)
+Gui.Form..BackColor(-2147483633)
+Gui.Form..MousePointer(0)
+Gui.Form..Event(UnLoad,Form_UnLoad)
+Gui.Form..Caption("Commission Maintenance")
+Gui.Form.txtPart.Create(TextBox,"",True,2910,300,0,60,360,True,0,"Arial",8,-2147483643,1)
+Gui.Form.txtPart.Locked(True)
+Gui.Form.lbl1.Create(Label,"Choose Part",True,1935,255,0,45,135,True,0,"Arial",8,-2147483633,0)
+Gui.Form.cmdPartBrowser.Create(Button)
+Gui.Form.cmdPartBrowser.Size(555,375)
+Gui.Form.cmdPartBrowser.Position(3060,315)
+Gui.Form.cmdPartBrowser.Caption("^")
+Gui.Form.cmdPartBrowser.Event(Click,cmdPartBrowser_Click)
+Gui.Form.lbl2.Create(Label,"Choose Salesperson",True,1935,255,0,60,825,True,0,"Arial",8,-2147483633,0)
+Gui.Form.txtSalesperson.Create(TextBox,"",True,2955,300,0,60,1065,True,0,"Arial",8,-2147483643,1)
+Gui.Form.txtSalesperson.Locked(True)
+Gui.Form.cmdSalespersonBrowser.Create(Button)
+Gui.Form.cmdSalespersonBrowser.Size(570,375)
+Gui.Form.cmdSalespersonBrowser.Position(3090,1005)
+Gui.Form.cmdSalespersonBrowser.Caption("^")
+Gui.Form.cmdSalespersonBrowser.Event(Click,cmdSalespersonBrowser_Click)
+Gui.Form.cmdCustomerBrowser.Create(Button)
+Gui.Form.cmdCustomerBrowser.Size(585,375)
+Gui.Form.cmdCustomerBrowser.Position(6960,285)
+Gui.Form.cmdCustomerBrowser.Caption("^")
+Gui.Form.cmdCustomerBrowser.Event(Click,cmdCustomerBrowser_Click)
+Gui.Form.txtCustomer.Create(TextBox,"",True,2985,300,0,3885,330,True,0,"Arial",8,-2147483643,1)
+Gui.Form.txtCustomer.Locked(True)
+Gui.Form.lbl3.Create(Label,"Choose Customer",True,1935,255,0,3945,135,True,0,"Arial",8,-2147483633,0)
+Gui.Form.GsGrid.Create(GsGridControl)
+Gui.Form.GsGrid.Size(7680,5055)
+Gui.Form.GsGrid.Position(-15,1560)
+Gui.Form.GsGrid.Event(RowClick,GsGrid_RowClick)
+Gui.Form.txtCommissionRate.Create(TextBox,"",True,1335,300,0,3960,1050,True,0,"Arial",8,-2147483643,1)
+Gui.Form.txtCommissionRate.MaxLength(6)
+Gui.Form.lbl4.Create(Label,"Commission Rate",True,1935,255,0,3930,810,True,0,"Arial",8,-2147483633,0)
+Gui.Form.cmdAdd.Create(Button)
+Gui.Form.cmdAdd.Size(855,375)
+Gui.Form.cmdAdd.Position(5520,990)
+Gui.Form.cmdAdd.Caption("ADD")
+Gui.Form.cmdAdd.Event(Click,cmdAdd_Click)
+Gui.Form.cmdDelete.Create(Button)
+Gui.Form.cmdDelete.Size(855,375)
+Gui.Form.cmdDelete.Position(90,6645)
+Gui.Form.cmdDelete.Caption("Delete")
+Gui.Form.cmdDelete.Event(Click,cmdDelete_Click)
+Gui.Form.cmdSave.Create(Button)
+Gui.Form.cmdSave.Size(855,375)
+Gui.Form.cmdSave.Position(6690,6645)
+Gui.Form.cmdSave.Caption("Save")
+Gui.Form.cmdSave.Event(Click,cmdSave_Click)
+Program.Sub.ScreenSU.End
+
+Program.Sub.Preflight.Start
+V.Global.iRow.Declare(Long)
+V.Global.iSave.Declare(Long,-1)
+Program.Sub.Preflight.End
+
+Program.Sub.Main.Start
+F.Intrinsic.Control.SetErrorHandler("Preflight_Err")
+F.Intrinsic.Control.ClearErrors
+
+V.Local.sError.Declare(String)
+
+
+F.ODBC.Connection!Con.OpenConnection(V.Ambient.PDSN,V.Ambient.PUser,V.Ambient.PPass)
+F.Data.DataTable.CreateFromSql("Head","Con","Select * From GCG_4208_COMM_MAINT",True)
+Gui.Form.GsGrid.AddGridViewFromDataTable("GridHead","Head")
+Gui.Form.GsGrid.mainview("GridHead")
+
+Gui.Form.GsGrid.SetColumnProperty("GridHead","PART","HeaderHAlignment","CENTER")
+Gui.Form.GsGrid.SetColumnProperty("GridHead","SALESPERSON","HeaderHAlignment","CENTER")
+Gui.Form.GsGrid.SetColumnProperty("GridHead","CUSTOMER","HeaderHAlignment","CENTER")
+Gui.Form.GsGrid.SetColumnProperty("GridHead","COMMISSIONPERC","HeaderHAlignment","CENTER")
+
+Gui.Form.GsGrid.SetColumnProperty("GridHead","PART","CellHAlignment","CENTER")
+Gui.Form.GsGrid.SetColumnProperty("GridHead","SALESPERSON","CellHAlignment","CENTER")
+Gui.Form.GsGrid.SetColumnProperty("GridHead","CUSTOMER","CellHAlignment","CENTER")
+Gui.Form.GsGrid.SetColumnProperty("GridHead","COMMISSIONPERC","CellHAlignment","CENTER")
+
+Gui.Form.GsGrid.SetColumnProperty("GridHead","PART","Width",40)
+Gui.Form.GsGrid.SetColumnProperty("GridHead","SALESPERSON","Width",10)
+Gui.Form.GsGrid.SetColumnProperty("GridHead","CUSTOMER","Width",10)
+Gui.Form.GsGrid.SetColumnProperty("GridHead","COMMISSIONPERC","Width",10)
+Gui.Form..Show
+V.Global.iRow.Set(-1)
+
+
+
+F.Intrinsic.Control.ExitSub
+
+F.Intrinsic.Control.Label("Preflight_Err")
+F.Intrinsic.Control.If(V.Ambient.ErrorNumber,<>,0)
+	Function.Intrinsic.String.Concat("Project: GCG_4208_COMM_MAINT.g2u",V.Ambient.Newline,V.Ambient.Newline,"Subroutine: ",V.Ambient.CurrentSubroutine,V.Ambient.NewLine,"Error Occurred ",V.Ambient.ErrorNumber," with description ",V.Ambient.ErrorDescription,V.Local.sError)
+	F.Intrinsic.UI.Msgbox(V.Local.sError)
+	Function.Intrinsic.Control.CallSub(form_unload)
+Function.Intrinsic.Control.EndIf
+
+
+Program.Sub.Main.End
+
+Program.Sub.Form_UnLoad.Start
+F.Intrinsic.Control.SetErrorHandler("Main_Err")
+F.Intrinsic.Control.ClearErrors
+
+V.Local.sError.Declare(String)
+
+
+V.Local.sRet.Declare(String)
+Function.Intrinsic.Control.If(V.Global.iSave, <>, -1)
+	Function.Intrinsic.UI.MsgBox ("Save Changes?", "Save Changes", 4, V.Local.sRet)
+	Function.Intrinsic.Control.If(V.Local.sRet, = , 6)
+		Function.Intrinsic.Control.CallSub(cmdsave_click)
+	Function.Intrinsic.Control.EndIf
+	Function.Intrinsic.Control.EndIf
+F.ODBC.Connection!Con.Close
+F.Intrinsic.Control.End
+
+F.Intrinsic.Control.ExitSub
+
+F.Intrinsic.Control.Label("Main_Err")
+F.Intrinsic.Control.If(V.Ambient.ErrorNumber,<>,0)
+	Function.Intrinsic.String.Concat("Project: GCG_4208_COMM_MAINT.g2u",V.Ambient.Newline,V.Ambient.Newline,"Subroutine: ",V.Ambient.CurrentSubroutine,V.Ambient.NewLine,"Error Occurred ",V.Ambient.ErrorNumber," with description ",V.Ambient.ErrorDescription,V.Local.sError)
+	F.Intrinsic.UI.Msgbox(V.Local.sError)
+	f.Intrinsic.Control.End
+
+Function.Intrinsic.Control.EndIf
+
+
+Program.Sub.Form_UnLoad.End
+
+Program.Sub.cmdPartBrowser_Click.Start
+F.Intrinsic.Control.SetErrorHandler("Main_Err")
+F.Intrinsic.Control.ClearErrors
+
+V.Local.sError.Declare(String)
+
+
+Variable.Local.sPart.Declare(String)
+Function.Intrinsic.UI.Browser(100, "", Variable.Local.sPart)
+F.Intrinsic.String.Split(Variable.Local.sPart, "*!*", Variable.Local.sPart)
+GUI.Form.txtPart.Text(Variable.Local.sPart(0))
+
+
+
+F.Intrinsic.Control.ExitSub
+
+F.Intrinsic.Control.Label("Main_Err")
+F.Intrinsic.Control.If(V.Ambient.ErrorNumber,<>,0)
+	Function.Intrinsic.String.Concat("Project: GCG_4208_COMM_MAINT.g2u",V.Ambient.Newline,V.Ambient.Newline,"Subroutine: ",V.Ambient.CurrentSubroutine,V.Ambient.NewLine,"Error Occurred ",V.Ambient.ErrorNumber," with description ",V.Ambient.ErrorDescription,V.Local.sError)
+	F.Intrinsic.UI.Msgbox(V.Local.sError)
+	Function.Intrinsic.Control.CallSub(form_unload)
+Function.Intrinsic.Control.EndIf
+
+
+Program.Sub.cmdPartBrowser_Click.End
+
+Program.Sub.cmdSalespersonBrowser_Click.Start
+F.Intrinsic.Control.SetErrorHandler("cmdPartBrowser_Click_Err")
+F.Intrinsic.Control.ClearErrors
+
+V.Local.sError.Declare(String)
+
+
+Variable.Local.sSalesPerson.Declare(String)
+Variable.local.sTitles.Declare(String)
+Variable.local.iWidths.Declare(String)
+
+Function.Intrinsic.String.Split("Name*!*ID","*!*",Variable.local.sTitles)
+Function.Intrinsic.String.Split("1000*!*800","*!*",Variable.local.iWidths)
+Function.Intrinsic.UI.Browser("Select a Salesperson", "Con", "Select Name, ID From SALESPERSONS",Variable.Local.sTitles,Variable.Local.iWidths,Variable.Local.sSalesPerson)
+F.Intrinsic.String.Split(Variable.Local.sSalesPerson, "*!*", Variable.Local.sSalesPerson)
+GUI.Form.txtSalesperson.Text(Variable.Local.sSalesPerson(1))
+
+
+
+F.Intrinsic.Control.ExitSub
+
+F.Intrinsic.Control.Label("cmdPartBrowser_Click_Err")
+F.Intrinsic.Control.If(V.Ambient.ErrorNumber,<>,0)
+	Function.Intrinsic.String.Concat("Project: GCG_4208_COMM_MAINT.g2u",V.Ambient.Newline,V.Ambient.Newline,"Subroutine: ",V.Ambient.CurrentSubroutine,V.Ambient.NewLine,"Error Occurred ",V.Ambient.ErrorNumber," with description ",V.Ambient.ErrorDescription,V.Local.sError)
+	F.Intrinsic.UI.Msgbox(V.Local.sError)
+	Function.Intrinsic.Control.CallSub(form_unload)
+Function.Intrinsic.Control.EndIf
+
+
+Program.Sub.cmdSalespersonBrowser_Click.End
+
+Program.Sub.cmdCustomerBrowser_Click.Start
+F.Intrinsic.Control.SetErrorHandler("cmdSalespersonBrowser_Click_Err")
+F.Intrinsic.Control.ClearErrors
+
+V.Local.sError.Declare(String)
+
+
+Variable.Local.sCustomer.Declare(String)
+Function.Intrinsic.UI.Browser(205, "", Variable.Local.sCustomer)
+F.Intrinsic.String.Split(Variable.Local.sCustomer, "*!*", Variable.Local.sCustomer)
+GUI.Form.txtCustomer.Text(Variable.Local.sCustomer)
+
+
+
+F.Intrinsic.Control.ExitSub
+
+F.Intrinsic.Control.Label("cmdSalespersonBrowser_Click_Err")
+F.Intrinsic.Control.If(V.Ambient.ErrorNumber,<>,0)
+	Function.Intrinsic.String.Concat("Project: GCG_4208_COMM_MAINT.g2u",V.Ambient.Newline,V.Ambient.Newline,"Subroutine: ",V.Ambient.CurrentSubroutine,V.Ambient.NewLine,"Error Occurred ",V.Ambient.ErrorNumber," with description ",V.Ambient.ErrorDescription,V.Local.sError)
+	F.Intrinsic.UI.Msgbox(V.Local.sError)
+	Function.Intrinsic.Control.CallSub(form_unload)
+Function.Intrinsic.Control.EndIf
+
+
+Program.Sub.cmdCustomerBrowser_Click.End
+
+Program.Sub.cmdAdd_Click.Start
+F.Intrinsic.Control.SetErrorHandler("cmdCustomerBrowser_Click_Err")
+F.Intrinsic.Control.ClearErrors
+
+V.Local.sError.Declare(String)
+
+
+V.Local.bNumber.Declare(Boolean)
+V.Local.sCommish.Declare(String)
+
+'add exceptions
+Function.Intrinsic.Control.If(V.Screen.Form!txtPart.Text, =, "")
+	F.Intrinsic.UI.Msgbox("Choose a Part")
+	Function.Intrinsic.Control.ExitSub	
+Function.Intrinsic.Control.EndIf
+Function.Intrinsic.Control.If(V.Screen.Form!txtSalesperson.Text, =, "")
+	F.Intrinsic.UI.Msgbox("Choose a Salesperson")
+	Function.Intrinsic.Control.ExitSub	
+Function.Intrinsic.Control.EndIf
+Function.Intrinsic.Control.If(V.Screen.Form!txtCustomer.Text, =, "")
+	F.Intrinsic.UI.Msgbox("Choose a Customer")
+	Function.Intrinsic.Control.ExitSub	
+Function.Intrinsic.Control.EndIf
+Function.Intrinsic.Control.If(V.Screen.Form!txtCommissionRate.Text, =, "")
+	F.Intrinsic.UI.Msgbox("Enter a Commission")
+	Function.Intrinsic.Control.ExitSub
+Function.Intrinsic.Control.EndIf
+Function.Intrinsic.Math.IsNumeric(V.Screen.Form!txtCommissionRate.Text, V.Local.bNumber)
+Function.Intrinsic.Control.If(V.Local.bNumber, =, FALSE)
+	F.Intrinsic.UI.Msgbox("Commission must be a Valid Number")
+	Function.Intrinsic.Control.ExitSub
+Function.Intrinsic.Control.EndIf
+
+Function.Intrinsic.String.Format(V.Screen.Form!txtCommissionRate.Text, "######.00", V.Local.sCommish)
+
+F.Data.DataTable.AddRow("Head", "PART", V.Screen.Form!txtPart.Text,"SALESPERSON",V.Screen.Form!txtSalesperson.Text,"CUSTOMER",V.Screen.Form!txtCustomer.Text,"COMMISSIONPERC",V.Local.sCommish)
+V.Global.iSave.Set(0)
+'clear the fields for the next line to be added to grid
+Gui.Form.txtPart.Text("")
+Gui.Form.txtSalesperson.Text("")
+Gui.Form.txtCustomer.Text("")
+Gui.Form.txtCommissionRate.Text("")
+
+
+
+F.Intrinsic.Control.ExitSub
+
+F.Intrinsic.Control.Label("cmdCustomerBrowser_Click_Err")
+F.Intrinsic.Control.If(V.Ambient.ErrorNumber,<>,0)
+	Function.Intrinsic.String.Concat("Project: GCG_4208_COMM_MAINT.g2u",V.Ambient.Newline,V.Ambient.Newline,"Subroutine: ",V.Ambient.CurrentSubroutine,V.Ambient.NewLine,"Error Occurred ",V.Ambient.ErrorNumber," with description ",V.Ambient.ErrorDescription,V.Local.sError)
+	F.Intrinsic.UI.Msgbox(V.Local.sError)
+	Function.Intrinsic.Control.CallSub(form_unload)
+Function.Intrinsic.Control.EndIf
+
+
+Program.Sub.cmdAdd_Click.End
+
+Program.Sub.cmdDelete_Click.Start
+F.Intrinsic.Control.SetErrorHandler("cmdAdd_Click_Err")
+F.Intrinsic.Control.ClearErrors
+
+V.Local.sError.Declare(String)
+
+
+Function.Intrinsic.Control.If(V.Global.iRow, =, -1)
+	F.Intrinsic.UI.Msgbox("Select a row to delete")
+Function.Intrinsic.Control.Else
+	F.Data.DataTable.DeleteRow("Head", V.Global.iRow)
+	V.Global.iSave.Set(0)
+	V.Global.iRow.Set(-1)
+Function.Intrinsic.Control.EndIf
+
+
+
+F.Intrinsic.Control.ExitSub
+
+F.Intrinsic.Control.Label("cmdAdd_Click_Err")
+F.Intrinsic.Control.If(V.Ambient.ErrorNumber,<>,0)
+	Function.Intrinsic.String.Concat("Project: GCG_4208_COMM_MAINT.g2u",V.Ambient.Newline,V.Ambient.Newline,"Subroutine: ",V.Ambient.CurrentSubroutine,V.Ambient.NewLine,"Error Occurred ",V.Ambient.ErrorNumber," with description ",V.Ambient.ErrorDescription,V.Local.sError)
+	F.Intrinsic.UI.Msgbox(V.Local.sError)
+	Function.Intrinsic.Control.CallSub(form_unload)
+Function.Intrinsic.Control.EndIf
+
+
+Program.Sub.cmdDelete_Click.End
+
+Program.Sub.cmdSave_Click.Start
+F.Intrinsic.Control.SetErrorHandler("cmdDelete_Click_Err")
+F.Intrinsic.Control.ClearErrors
+
+V.Local.sError.Declare(String)
+
+
+'save if conditions are met
+Function.Data.DataTable.SaveToDB("Head","con","GCG_4208_COMM_MAINT","PART*!*SALESPERSON*!*CUSTOMER",4)
+Function.Data.DataTable.SaveToDB("Head","con","GCG_4208_COMM_MAINT","PART*!*SALESPERSON*!*CUSTOMER",256)
+V.Global.iSave.Set(-1)
+
+
+
+F.Intrinsic.Control.ExitSub
+
+F.Intrinsic.Control.Label("cmdDelete_Click_Err")
+F.Intrinsic.Control.If(V.Ambient.ErrorNumber,<>,0)
+	Function.Intrinsic.String.Concat("Project: GCG_4208_COMM_MAINT.g2u",V.Ambient.Newline,V.Ambient.Newline,"Subroutine: ",V.Ambient.CurrentSubroutine,V.Ambient.NewLine,"Error Occurred ",V.Ambient.ErrorNumber," with description ",V.Ambient.ErrorDescription,V.Local.sError)
+	F.Intrinsic.UI.Msgbox(V.Local.sError)
+	Function.Intrinsic.Control.CallSub(form_unload)
+Function.Intrinsic.Control.EndIf
+
+
+Program.Sub.cmdSave_Click.End
+
+Program.Sub.GsGrid_RowClick.Start
+F.Intrinsic.Control.SetErrorHandler("cmdSave_Click_Err")
+F.Intrinsic.Control.ClearErrors
+
+V.Local.sError.Declare(String)
+
+
+V.Global.iRow.Set(V.Args.RowIndex)
+
+
+
+F.Intrinsic.Control.ExitSub
+
+F.Intrinsic.Control.Label("cmdSave_Click_Err")
+F.Intrinsic.Control.If(V.Ambient.ErrorNumber,<>,0)
+	Function.Intrinsic.String.Concat("Project: GCG_4208_COMM_MAINT.g2u",V.Ambient.Newline,V.Ambient.Newline,"Subroutine: ",V.Ambient.CurrentSubroutine,V.Ambient.NewLine,"Error Occurred ",V.Ambient.ErrorNumber," with description ",V.Ambient.ErrorDescription,V.Local.sError)
+	F.Intrinsic.UI.Msgbox(V.Local.sError)
+	Function.Intrinsic.Control.CallSub(form_unload)
+Function.Intrinsic.Control.EndIf
+
+
+Program.Sub.GsGrid_RowClick.End
+
+Program.Sub.Comments.Start
+${$0$}$GCG_4208_COMM_MAINT.g2u$}$DH1$}$11/7/2016 11:15:35 AM$}$False
+Program.Sub.Comments.End
