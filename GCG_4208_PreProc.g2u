@@ -1,0 +1,270 @@
+Program.Sub.ScreenSU.Start
+Gui.Form..Create
+Gui.Form..Size(4230,2370)
+Gui.Form..MinX(0)
+Gui.Form..MinY(0)
+Gui.Form..Position(0,0)
+Gui.Form..BackColor(-2147483633)
+Gui.Form..MousePointer(0)
+Gui.Form..Event(UnLoad,Form_UnLoad)
+Gui.Form..Caption("Commission Report")
+Gui.Form..MaxButton(False)
+Gui.Form..MinButton(False)
+Gui.Form..Sizeable(False)
+Gui.Form.dtpBeg.Create(DatePicker)
+Gui.Form.dtpBeg.Size(1545,285)
+Gui.Form.dtpBeg.Position(240,555)
+Gui.Form.dtpEnd.Create(DatePicker)
+Gui.Form.dtpEnd.Size(1545,285)
+Gui.Form.dtpEnd.Position(2205,555)
+Gui.Form.lblBegDate.Create(Label,"Beginning Date",True,1380,255,0,225,255,True,0,"Arial",8,-2147483633,0)
+Gui.Form.lblEndDate.Create(Label,"Ending Date",True,1935,255,0,2160,300,True,0,"Arial",8,-2147483633,0)
+Gui.Form.cmdPrint.Create(Button)
+Gui.Form.cmdPrint.Size(1125,450)
+Gui.Form.cmdPrint.Position(270,1170)
+Gui.Form.cmdPrint.Caption("Print")
+Gui.Form.cmdPrint.Event(Click,cmdPrint_Click)
+Program.Sub.ScreenSU.End
+
+Variable.Global.iBIRUNID.Declare(Long,0)
+Program.Sub.Preflight.Start
+Program.Sub.Preflight.End
+
+Program.Sub.Main.Start
+F.Intrinsic.Control.SetErrorHandler("Main_Err")
+F.Intrinsic.Control.ClearErrors
+
+V.Local.sError.Declare(String)
+
+'Custom Pre-Processor for a custom commissions report for GFM, LLC
+'Coded by: WAW
+'Date: 11/07/2016
+
+'open the conneciton
+F.ODBC.Connection!Conx.OpenConnection(V.Ambient.PDSN,V.Ambient.PUser,V.Ambient.PPass,1800)
+
+'call the create report datatable subroutine
+F.Intrinsic.Control.CallSub(createreportdatatable)
+
+'display the form
+gui.Form..Visible(true)
+
+F.Intrinsic.Control.ExitSub
+
+F.Intrinsic.Control.Label("Main_Err")
+F.Intrinsic.Control.If(V.Ambient.ErrorNumber,<>,0)
+	Function.Intrinsic.String.Concat("Project: GCG_4208_PreProc.g2u",V.Ambient.Newline,V.Ambient.Newline,"Subroutine: ",V.Ambient.CurrentSubroutine,V.Ambient.NewLine,"Error Occurred ",V.Ambient.ErrorNumber," with description ",V.Ambient.ErrorDescription,V.Local.sError)
+	F.Intrinsic.UI.Msgbox(V.Local.sError)
+	f.Intrinsic.Control.CallSub(form_unload)
+Function.Intrinsic.Control.EndIf
+
+
+Program.Sub.Main.End
+
+Program.Sub.Form_UnLoad.Start
+F.Intrinsic.Control.SetErrorHandler("Comments_Err")
+F.Intrinsic.Control.ClearErrors
+
+V.Local.sError.Declare(String)
+
+'close the connection
+F.ODBC.Connection!conx.Close
+
+'end the program
+F.Intrinsic.Control.End
+
+F.Intrinsic.Control.ExitSub
+
+F.Intrinsic.Control.Label("Comments_Err")
+F.Intrinsic.Control.If(V.Ambient.ErrorNumber,<>,0)
+	Function.Intrinsic.String.Concat("Project: GCG_4208_PreProc.g2u",V.Ambient.Newline,V.Ambient.Newline,"Subroutine: ",V.Ambient.CurrentSubroutine,V.Ambient.NewLine,"Error Occurred ",V.Ambient.ErrorNumber," with description ",V.Ambient.ErrorDescription,V.Local.sError)
+	F.Intrinsic.UI.Msgbox(V.Local.sError)
+	f.Intrinsic.Control.End
+
+Function.Intrinsic.Control.EndIf
+
+
+Program.Sub.Form_UnLoad.End
+
+Program.Sub.cmdPrint_Click.Start
+F.Intrinsic.Control.SetErrorHandler("Main_Err")
+F.Intrinsic.Control.ClearErrors
+
+V.Local.sError.Declare(String)
+V.Local.sBeginDate.Declare(String)
+V.Local.sEndDate.Declare(String)
+v.Local.ssql.Declare(String)
+v.Local.i.Declare(long)
+v.Local.fsales.Declare(float)
+v.Local.fqty.Declare(float)
+v.Local.fcharcommish.Declare(float)
+v.Local.fcharcommishperc.Declare(float)
+v.Local.ibirunid.Declare(long)
+
+
+
+f.Global.BI.GetRunID(v.Local.ibirunid)
+v.Global.iBIRUNID.Set(v.Local.ibirunid)
+
+'make the form invisible
+gui.Form..Visible(false)
+
+'set the dates to local variables
+F.Intrinsic.String.Format(V.Screen.Form!dtpBeg.Value,"YYYY-MM-DD",V.Local.sBeginDate)
+F.Intrinsic.String.Format(V.Screen.Form!dtpEnd.Value,"YYYY-MM-DD",V.Local.sEndDate)
+
+
+'Query for the orders that have shipped within the selected date range
+f.Intrinsic.String.Build("select V_ORDER_LINES.ORDER_NO, V_ORDER_LINES.RECORD_NO, V_ORDER_LINES.CUSTOMER, V_ORDER_LINES.DATE_SHIP, V_ORDER_LINES.PART, rTrim(V_ORDER_LINES.CUSTOMER_PART) as Customer_Part, V_ORDER_LINES.QTY_SHIPPED, V_ORDER_LINES.PRICE, V_ORDER_LINES.COST, V_ORDER_HEADER.SALESPERSON  from V_ORDER_LINES inner join V_ORDER_HEADER on V_ORDER_LINES.ORDER_NO = V_ORDER_HEADER.ORDER_NO where V_ORDER_LINES.DATE_SHIP between '{0}' and '{1}' group by SALESPERSON, CUSTOMER, PART, DATE_SHIP, CUSTOMER_PART, QTY_SHIPPED, PRICE, COST,  ORDER_NO, RECORD_NO",v.Local.sBeginDate.PervasiveDate,v.Local.sEndDate.PervasiveDate,v.Local.ssql)
+
+F.ODBC.Connection!conx.openrecordsetro("rst",V.Local.ssql)
+F.Intrinsic.Control.If(V.ODBC.conx!rst.EOF,=,False)
+	'create the datatable
+	f.Data.DataTable.CreateFromSQL("ORDERINFO","conx",v.Local.ssql,true)
+f.Intrinsic.Control.Else	
+	'close connection and close the program
+	f.ODBC.Conx!rst.Close
+	f.Intrinsic.Control.CallSub(form_unload)
+f.Intrinsic.Control.EndIf
+f.ODBC.Conx!rst.Close
+
+'loop through the datatable and see if there were custom records created
+F.Intrinsic.Control.For(v.Local.i,0,v.dataTable.ORDERINFO.RowCount--,1) 
+	'query to see if there is data in the custom table for salesperson, customer and part
+	f.Intrinsic.String.Build("Select * from GCG_4208_COMM_MAINT where SALESPERSON = '{0}' and CUSTOMER = '{1}' and PART = '{2}'",v.dataTable.ORDERINFO(v.Local.i).SALESPERSON!FieldValTrim,v.dataTable.ORDERINFO(v.Local.i).CUSTOMER!FieldValTrim,v.dataTable.ORDERINFO(v.Local.i).PART!FieldValTrim,V.Local.ssql)
+	F.ODBC.Connection!conx.openrecordsetro("rst",V.Local.ssql)
+	F.Intrinsic.Control.If(V.ODBC.conx!rst.EOF,=,False)
+		'multiply price X qty shipped to get the sale value
+		f.Intrinsic.Math.Mult(v.dataTable.ORDERINFO(v.Local.i).PRICE!FieldValfloat,v.dataTable.ORDERINFO(v.Local.i).QTY_SHIPPED!FieldValfloat,v.Local.fsales)
+		'set the commission percentage
+		v.Local.fcharcommishperc.Set(v.ODBC.Conx!rst.FieldValTrim!COMMISSIONPERC)
+		'multiply the sale value by the commission percentage found in the custom table
+		f.Intrinsic.Math.Mult(v.Local.fsales,v.Local.fcharcommishperc,v.Local.fcharcommish)
+		F.Intrinsic.Math.Div(v.Local.fcharcommish, 100, v.Local.fcharcommish)
+		'Function.Intrinsic.Control.If(v.dataTable.ORDERINFO(v.Local.i).CUSTOMER_PART!FieldValTrim, =, "")
+		
+		
+		'add the data to the report datatable
+		F.Data.DataTable.AddRow("REPORT","SALESPERSON",v.dataTable.ORDERINFO(v.Local.i).SALESPERSON!FieldValTrim,"CUSTOMER",v.dataTable.ORDERINFO(v.Local.i).CUSTOMER!FieldValTrim,"CUSTPART",v.dataTable.ORDERINFO(v.Local.i).CUSTOMER_PART!FieldValTrim,"GSSPART",v.dataTable.ORDERINFO(v.Local.i).PART!FieldValTrim,"QTY_SHIP",v.dataTable.ORDERINFO(v.Local.i).QTY_SHIPPED!FieldValTrim,"SALES",v.Local.fsales,"COMMISSION_PERC",v.Local.fcharcommishperc,"COMMISSION_TOTAL",v.Local.fcharcommish,"BIRUNID",v.Local.ibirunid)
+	f.Intrinsic.Control.EndIf
+	f.ODBC.Conx!rst.Close
+f.Intrinsic.Control.Next(v.Local.i)
+
+
+'call the print report sub
+f.Intrinsic.Control.CallSub(print)
+
+F.Intrinsic.Control.ExitSub
+
+F.Intrinsic.Control.Label("Main_Err")
+F.Intrinsic.Control.If(V.Ambient.ErrorNumber,<>,0)
+	Function.Intrinsic.String.Concat("Project: GCG_4208_PreProc.g2u",V.Ambient.Newline,V.Ambient.Newline,"Subroutine: ",V.Ambient.CurrentSubroutine,V.Ambient.NewLine,"Error Occurred ",V.Ambient.ErrorNumber," with description ",V.Ambient.ErrorDescription,V.Local.sError)
+	F.Intrinsic.UI.Msgbox(V.Local.sError)
+Function.Intrinsic.Control.EndIf
+
+
+Program.Sub.cmdPrint_Click.End
+
+Program.Sub.CreateReportDatatable.Start
+F.Intrinsic.Control.SetErrorHandler("CreateReportDatatable_Err")
+F.Intrinsic.Control.ClearErrors
+
+V.Local.sError.Declare(String)
+
+Function.ODBC.Connection!Conx.Execute("Delete From GCG_4208_COMMISH")
+F.Data.DataTable.CreateFromSQL("Report","Conx","Select * From GCG_4208_COMMISH",True) 
+
+
+
+F.Intrinsic.Control.ExitSub
+
+F.Intrinsic.Control.Label("CreateReportDatatable_Err")
+F.Intrinsic.Control.If(V.Ambient.ErrorNumber,<>,0)
+	Function.Intrinsic.String.Concat("Project: GCG_4208_PreProc.g2u",V.Ambient.Newline,V.Ambient.Newline,"Subroutine: ",V.Ambient.CurrentSubroutine,V.Ambient.NewLine,"Error Occurred ",V.Ambient.ErrorNumber," with description ",V.Ambient.ErrorDescription,V.Local.sError)
+	F.Intrinsic.UI.Msgbox(V.Local.sError)
+	f.Intrinsic.Control.CallSub(form_unload)
+Function.Intrinsic.Control.EndIf
+
+
+Program.Sub.CreateReportDatatable.End
+
+Program.Sub.Print.Start
+F.Intrinsic.Control.SetErrorHandler("Print_Err")
+F.Intrinsic.Control.ClearErrors
+
+V.Local.sError.Declare(String)
+v.Local.ssql.Declare(string)
+v.Local.irpt.declare(long)
+v.Local.ilogid.Declare(long)
+v.Local.ibirunid.Declare(long)
+v.Local.sparams.Declare(string)
+v.Local.svalues.Declare(String)
+v.Local.sbegindate.Declare(string)
+v.Local.senddate.Declare(String)
+v.Local.stitle.Declare(string)
+v.Local.iret.Declare(long)
+
+'set the dates to local variables
+F.Intrinsic.String.Format(V.Screen.Form!dtpBeg.Value,"YYYY-MM-DD",V.Local.sBeginDate)
+F.Intrinsic.String.Format(V.Screen.Form!dtpEnd.Value,"YYYY-MM-DD",V.Local.sEndDate)
+
+
+'set the title of the report
+f.Intrinsic.String.Build("Shipping Date Range: {0} - {1}",v.Local.sbegindate,v.Local.senddate,v.Local.svalues)
+
+f.Intrinsic.String.Build("{0}*!*{1}",v.Local.svalues,v.Global.ibirunid,v.Local.svalues)
+
+'get the run and report ID
+f.Global.BI.GetIDFromName("GCG_4208_Commish.rpt",v.Local.irpt)
+'''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''
+'f.Global.BI.StartLogging(v.Global.ibirunid,v.local.irpt,-1,"GCG_4208_Commish",v.Local.ilogid)
+
+'invoke wait dialog
+f.Intrinsic.UI.InvokeWaitDialog("Generating the report...")
+
+'clear out the custom table
+f.Intrinsic.String.Build("Delete from GCG_4208_COMMISH where BIRUNID <> '{0}'",v.Global.ibirunid,v.Local.ssql)
+f.ODBC.Connection!Conx.Execute(v.Local.ssql)
+
+Function.Data.Dictionary.CreateFromSQL("SalesName", "Conx", "Select distinct ID as SALESPERSON, Name as SALES_NAME From V_SALESPERSONS")
+Function.Data.DataTable.FillFromDictionary("Report", "SalesName", "SALESPERSON", "SALES_NAME")
+Function.Data.Dictionary.Close("SalesName")
+Function.Data.Dictionary.CreateFromSQL("CustomerName", "Conx", "Select distinct CUSTOMER, NAME_CUSTOMER as CUSTOMER_NAME From V_CUSTOMER_MASTER ")
+Function.Data.DataTable.FillFromDictionary("Report", "CustomerName", "CUSTOMER", "CUSTOMER_NAME")
+Function.Data.Dictionary.Close("CustomerName")
+
+'save the report datatable to the custom report table
+F.Data.DataTable.SaveToDB("REPORT","conx","GCG_4208_COMMISH","SALESPERSON*!*CUSTOMER*!*CUSTPART*!*GSSPART*!*QTY_SHIP*!*SALES*!*COMMISSION_PERC*!*COMMISSION_TOTAL*!*BIRUNID", 256)
+
+'set the PARAMETERS
+v.Local.sparams.Set("TITLE*!*BIRUNID")
+'''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''
+'print the report
+F.Global.BI.StopLogging(V.Global.ibirunid)
+f.Global.BI.RunReportPreProcessor(v.Global.ibirunid,v.Local.ilogid,v.Local.sparams,v.Local.svalues,"",-1,True,"",-1,"",-1,"","",V.Local.iRet)
+
+'F.Global.BI.StopLogging(V.Global.iBIRunID)
+'F.Global.BI.RunReportPreProcessor(V.global.iBIRunID,V.global.iLogID,V.Local.sParams,V.Local.sValues,"",-1,True,"",-1,"",-1,"","",V.Local.iRet)
+
+
+
+f.Intrinsic.UI.CloseWaitDialog	
+
+F.Intrinsic.Control.ExitSub
+
+F.Intrinsic.Control.Label("Print_Err")
+F.Intrinsic.Control.If(V.Ambient.ErrorNumber,<>,0)
+	Function.Intrinsic.String.Concat("Project: GCG_4208_PreProc.g2u",V.Ambient.Newline,V.Ambient.Newline,"Subroutine: ",V.Ambient.CurrentSubroutine,V.Ambient.NewLine,"Error Occurred ",V.Ambient.ErrorNumber," with description ",V.Ambient.ErrorDescription,V.Local.sError)
+	F.Intrinsic.UI.Msgbox(V.Local.sError)
+	f.Intrinsic.Control.CallSub(form_unload)
+Function.Intrinsic.Control.EndIf
+
+
+Program.Sub.Print.End
+
+Program.Sub.Comments.Start
+${$0$}$$}$WAW$}$11/7/2016 8:38:06 AM$}$False
+${$3$}$0$}$$}$-1$}$-1$}$$}$1/1/1900$}$Original customer was SMS Millcraft.
+
+This is a re-write of the original script due to many inconsistencies with the original.
+Program.Sub.Comments.End
